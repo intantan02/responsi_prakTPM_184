@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:responsi_184/detail_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'login_page.dart';
 import 'register_page.dart';
@@ -25,7 +26,7 @@ class FilmApp extends StatelessWidget {
       title: 'Responsi',
       initialRoute: isLoggedIn ? '/home' : '/',
       routes: {
-        '/': (context) => LoginPage(),
+        '/login': (context) => LoginPage(),
         '/register': (context) => RegisterPage(),
         '/home': (context) => HomePage(),
         '/detail': (context) => DetailPage(),

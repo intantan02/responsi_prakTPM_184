@@ -85,6 +85,15 @@ class _HomePageState extends State<HomePage> {
             icon: Icon(Icons.favorite, color: Colors.white),
             onPressed: () => Navigator.pushNamed(context, '/favorite'),
           ),
+          IconButton(
+            icon: Icon(Icons.logout, color: Colors.white),
+            onPressed: () async {
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.clear(); // Menghapus data login
+              if (!mounted) return;
+              Navigator.pushReplacementNamed(context, '/login'); // Kembali ke login
+            },
+          ),
         ],
       ),
       body: _isLoading

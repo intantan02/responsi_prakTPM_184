@@ -18,12 +18,13 @@ class _LoginPageState extends State<LoginPage> {
     final storedPassword = prefs.getString('password');
 
     if (storedUsername == username && storedPassword == password) {
+      // Menyimpan Status Login
       await prefs.setBool('isLoggedIn', true);
       Navigator.pushReplacementNamed(context, '/home');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Username atau Password Salah.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Username atau Password Salah.')));
     }
   }
 
@@ -37,54 +38,58 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      appBar: AppBar(
+        title: Text('Login'),
+        backgroundColor: const Color.fromARGB(132, 14, 190, 73),
+        foregroundColor: Colors.white,
+      ),
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
-          child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Icon(Icons.lock_outline, size: 80, color: Colors.green[700]),
-                SizedBox(height: 20),
-                Text("Selamat Datang", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-                SizedBox(height: 30),
-                TextField(
-                  controller: usernameController,
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.person),
-                    labelText: 'Username',
-                    border: OutlineInputBorder(),
-                  ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // Input Username
+              TextFormField(
+                controller: usernameController,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Username',
                 ),
-                SizedBox(height: 20),
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    prefixIcon: Icon(Icons.lock),
-                    labelText: 'Password',
-                    border: OutlineInputBorder(),
-                  ),
+              ),
+              SizedBox(height: 20),
+
+              // Input Password
+              TextFormField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Password',
                 ),
-                SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: handleLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green[700],
-                      foregroundColor: Colors.white,
-                    ),
-                    child: Text('Login'),
-                  ),
+              ),
+              SizedBox(height: 30),
+
+              ElevatedButton(
+                onPressed: handleLogin,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color.fromARGB(132, 14, 190, 73),
+                  foregroundColor: Colors.white,
                 ),
-                TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/register'),
-                  child: Text('Belum punya akun? Register'),
-                )
-              ],
-            ),
+                child: Text('Login'),
+              ),
+              SizedBox(height: 20),
+
+              TextButton(
+                onPressed: () {
+                  Navigator.pushNamed(context, '/register');
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color.fromARGB(132, 12, 95, 39),
+                ),
+                child: Text('Belum Memiliki Akun? Buat Akun Terlebih Dahulu!'),
+              ),
+            ],
           ),
         ),
       ),
