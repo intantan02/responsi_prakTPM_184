@@ -28,18 +28,26 @@ class Film {
   });
 
   factory Film.fromJson(Map<String, dynamic> json) {
+    String parseListToString(dynamic field) {
+      if (field == null) return '';
+      if (field is List) {
+        return field.map((e) => e.toString()).join(', ');
+      }
+      return field.toString();
+    }
+
     return Film(
-      id: json['id'] ?? '',
+      id: json['id']?.toString() ?? '',
       title: json['title'] ?? '',
       releaseDate: json['release_date'] ?? '',
-      pictureId: json['pictureId'] ?? '',
+      pictureId: json['imgUrl']?.toString().trim() ?? '',
       rating: json['rating'] ?? '',
-      genre: json['genre'] ?? '',
+      genre: parseListToString(json['genre']),
       createdAt: json['created_at'] ?? '',
       description: json['description'] ?? '',
       director: json['director'] ?? '',
-      cast: json['cast'] ?? '',
-      language: json['language'] ?? '',
+      cast: parseListToString(json['cast']),
+      language: parseListToString(json['language']),
       duration: json['duration'] ?? '',
     );
   }
@@ -49,7 +57,7 @@ class Film {
       'id': id,
       'title': title,
       'release_date': releaseDate,
-      'pictureId': pictureId,
+      'imgUrl': pictureId,
       'rating': rating,
       'genre': genre,
       'created_at': createdAt,

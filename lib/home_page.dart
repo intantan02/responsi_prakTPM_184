@@ -10,189 +10,162 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final ApiService apiService = ApiService();
-  String _username = '';
-  Set<String> _favoriteFilmIds = {};
   List<Film> _films = [];
-  List<Film> _filteredFilms = [];
+  Set<String> _favoriteIds = {};
   String _selectedGenre = 'All';
-  String? _errorMessage;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    loadUserInfo();
-    loadFavoriteFilms();
-    fetchFilmData();
+    loadFavorites();
+    fetchData();
   }
 
-  Future<void> loadUserInfo() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      setState(() {
-        _username = prefs.getString('username') ?? '';
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Gagal memuat informasi pengguna';
-      });
-    }
-  }
-
-  Future<void> loadFavoriteFilms() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final favoriteIds = prefs.getStringList('favorite_films') ?? [];
-      setState(() {
-        _favoriteFilmIds = favoriteIds.toSet();
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Gagal memuat data favorit';
-      });
-    }
-  }
-
-  Future<void> saveFavoriteFilms() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setStringList('favorite_films', _favoriteFilmIds.toList());
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Gagal menyimpan data favorit';
-      });
-    }
-  }
-
-  void toggleFavorite(String filmId) {
+  Future<void> loadFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      if (_favoriteFilmIds.contains(filmId)) {
-        _favoriteFilmIds.remove(filmId);
+      _favoriteIds = prefs.getStringList('favorite_films')?.toSet() ?? {};
+    });
+  }
+
+  Future<void> saveFavorites() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('favorite_films', _favoriteIds.toList());
+  }
+
+  Future<void> fetchData() async {
+    try {
+      final data = await apiService.fetchFilms();
+      if (!mounted) return;
+      setState(() {
+        _films = data;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void toggleFavorite(String id) {
+    setState(() {
+      if (_favoriteIds.contains(id)) {
+        _favoriteIds.remove(id);
       } else {
-        _favoriteFilmIds.add(filmId);
+        _favoriteIds.add(id);
       }
     });
-    saveFavoriteFilms();
+    saveFavorites();
   }
 
-  Future<void> logout() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isLoggedIn', false);
-      await prefs.remove('username');
-      await prefs.remove('password');
-      Navigator.pushReplacementNamed(context, '/');
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Gagal logout';
-      });
-    }
+  List<Film> get filteredFilms {
+    if (_selectedGenre == 'All') return _films;
+    return _films.where((f) => f.genre == _selectedGenre).toList();
   }
 
-  Future<void> fetchFilmData() async {
-    try {
-      final films = await apiService.fetchFilms();
-      setState(() {
-        _films = films;
-        _filteredFilms = films;
-        _errorMessage = null;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Gagal memuat data film';
-      });
-    }
-  }
-
-  void filterByGenre(String genre) {
-    setState(() {
-      _selectedGenre = genre;
-      _filteredFilms = genre == 'All'
-          ? _films
-          : _films.where((film) => film.genre == genre).toList();
-    });
-  }
-
-  List<String> getGenres() {
-    final genres = _films.map((film) => film.genre).toSet().toList();
-    genres.sort();
-    genres.insert(0, 'All');
-    return genres;
+  List<String> get genres {
+    final genreSet = _films.map((f) => f.genre).toSet().toList();
+    genreSet.sort();
+    genreSet.insert(0, 'All');
+    return genreSet;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: Text('Hai, $_username!'),
-        backgroundColor: const Color.fromARGB(132, 14, 190, 73),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.green[700],
+        title: Text("Daftar Film", style: TextStyle(color: Colors.white)),
         actions: [
-          IconButton(icon: Icon(Icons.logout), onPressed: logout),
           IconButton(
-            icon: Icon(Icons.favorite),
-            onPressed: () {
-              Navigator.pushNamed(context, '/favorite');
-            },
+            icon: Icon(Icons.favorite, color: Colors.white),
+            onPressed: () => Navigator.pushNamed(context, '/favorite'),
           ),
         ],
       ),
-      body: _errorMessage != null
-          ? Center(child: Text(_errorMessage!))
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                DropdownButton<String>(
-                  value: _selectedGenre,
-                  onChanged: (value) {
-                    if (value != null) {
-                      filterByGenre(value);
-                    }
-                  },
-                  items: getGenres()
-                      .map((genre) => DropdownMenuItem(
-                            value: genre,
-                            child: Text(genre),
-                          ))
-                      .toList(),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.green),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: _selectedGenre,
+                        icon: Icon(Icons.arrow_drop_down),
+                        onChanged: (val) => setState(() => _selectedGenre = val!),
+                        items: genres
+                            .map((g) => DropdownMenuItem(
+                                  value: g,
+                                  child: Text(g),
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                  ),
                 ),
                 Expanded(
-                  child: _filteredFilms.isEmpty
-                      ? const Center(child: CircularProgressIndicator())
-                      : ListView.builder(
-                          itemCount: _filteredFilms.length,
-                          itemBuilder: (context, index) {
-                            final film = _filteredFilms[index];
-                            final isFavorite = _favoriteFilmIds.contains(film.id);
-
-                            return ListTile(
-                              leading: Image.network(
-                                film.pictureId,
-                                width: 60,
-                                height: 60,
-                                fit: BoxFit.cover,
-                              ),
-                              title: Text(film.title),
-                              subtitle: Text(film.genre),
-                              trailing: IconButton(
-                                icon: Icon(
-                                  isFavorite
-                                      ? Icons.favorite
-                                      : Icons.favorite_border,
-                                  color: isFavorite ? Colors.red : Colors.grey,
-                                ),
-                                onPressed: () {
-                                  toggleFavorite(film.id);
-                                },
-                              ),
-                              onTap: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  '/detail',
-                                  arguments: film.id,
-                                );
-                              },
-                            );
-                          },
+                  child: ListView.builder(
+                    itemCount: filteredFilms.length,
+                    itemBuilder: (context, index) {
+                      final film = filteredFilms[index];
+                      final isFav = _favoriteIds.contains(film.id);
+                      return Card(
+                        elevation: 3,
+                        margin:
+                            EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.all(10),
+                          leading: film.pictureId.isNotEmpty
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.network(
+                                    film.pictureId,
+                                    width: 60,
+                                    height: 90,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) =>
+                                        const Icon(Icons.broken_image),
+                                  ),
+                                )
+                              : const Icon(Icons.image_not_supported, size: 60),
+                          title: Text(
+                            film.title,
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                          subtitle: Text(film.genre),
+                          trailing: IconButton(
+                            icon: Icon(
+                              isFav
+                                  ? Icons.favorite
+                                  : Icons.favorite_border,
+                              color: isFav ? Colors.red : Colors.grey,
+                            ),
+                            onPressed: () => toggleFavorite(film.id),
+                          ),
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            '/detail',
+                            arguments: film.id,
+                          ),
                         ),
+                      );
+                    },
+                  ),
                 ),
               ],
             ),
