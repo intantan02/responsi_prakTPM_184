@@ -6,7 +6,6 @@ import 'register_page.dart';
 import 'home_page.dart';
 import 'favorite_page.dart';
 
-
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
